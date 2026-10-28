@@ -1,0 +1,702 @@
+{
+  "model_version": "rf-20261028-093136",
+  "model_type": "RandomForestClassifier (scikit-learn Pipeline)",
+  "trained_at": "2026-10-28T09:31:36+00:00",
+  "sklearn_version": "1.9.1",
+  "python_version": "3.12.3",
+  "seed": 42,
+  "hyperparameters": {
+    "n_estimators": 128,
+    "max_depth": 18,
+    "max_leaf_nodes": 1024,
+    "min_samples_leaf": 2,
+    "max_features": "sqrt",
+    "class_weight": "balanced_subsample",
+    "test_size": 0.2
+  },
+  "provenance": {
+    "dataset": "CIC-IDS2017",
+    "publisher": "Canadian Institute for Cybersecurity, University of New Brunswick",
+    "paper": "Sharafaldin, Lashkari & Ghorbani, 'Toward Generating a New Intrusion Detection Dataset and Intrusion Traffic Characterization', ICISSP 2018",
+    "official_url": "https://www.unb.ca/cic/datasets/ids-2017.html",
+    "mirror_url": "https://huggingface.co/datasets/bencorn/CICIDS2017/resolve/main/csvs/MachineLearningCSV.zip",
+    "source_file": "/workspace/chats/925d5e40beb6ce4f077bbadb/backend/data/artifacts/train_sample.parquet",
+    "full_dataset_rows": 2830743,
+    "rows_used_for_training": 288028,
+    "class_counts": {
+      "benign": 90000,
+      "ddos": 60000,
+      "portscan": 60000,
+      "dos": 60000,
+      "bruteforce": 13835,
+      "webattack": 2180,
+      "bot": 1966,
+      "infiltration": 36,
+      "heartbleed": 11
+    }
+  },
+  "feature_count": 70,
+  "model": {
+    "accuracy": 0.9963371870985661,
+    "balanced_accuracy": 0.9803969378312168,
+    "precision_macro": 0.9317321441359224,
+    "recall_macro": 0.9803969378312168,
+    "f1_macro": 0.9498557628154463,
+    "precision_weighted": 0.9968995134792176,
+    "recall_weighted": 0.9963371870985661,
+    "f1_weighted": 0.9964947142419421,
+    "per_class": {
+      "Bot / C2": {
+        "precision": 0.7490421455938697,
+        "recall": 0.9923857868020305,
+        "f1": 0.8537117903930131,
+        "support": 394
+      },
+      "Brute Force": {
+        "precision": 0.9996385977593061,
+        "recall": 0.9996385977593061,
+        "f1": 0.9996385977593061,
+        "support": 2767
+      },
+      "DDoS": {
+        "precision": 0.9998332499583125,
+        "recall": 0.9993333333333333,
+        "f1": 0.9995832291406185,
+        "support": 12000
+      },
+      "DoS": {
+        "precision": 0.9976701614245299,
+        "recall": 0.9991666666666666,
+        "f1": 0.9984178532767092,
+        "support": 12000
+      },
+      "Heartbleed": {
+        "precision": 0.6666666666666666,
+        "recall": 1.0,
+        "f1": 0.8,
+        "support": 2
+      },
+      "Infiltration": {
+        "precision": 1.0,
+        "recall": 0.8571428571428571,
+        "f1": 0.9230769230769231,
+        "support": 7
+      },
+      "Port Scan": {
+        "precision": 0.9992500624947921,
+        "recall": 0.9993333333333333,
+        "f1": 0.9992916961793259,
+        "support": 12000
+      },
+      "Web Attack": {
+        "precision": 0.9750566893424036,
+        "recall": 0.9862385321100917,
+        "f1": 0.9806157354618016,
+        "support": 436
+      },
+      "Benign": {
+        "precision": 0.9984317239834211,
+        "recall": 0.9903333333333333,
+        "f1": 0.9943660400513192,
+        "support": 18000
+      }
+    },
+    "labels": [
+      "bot",
+      "bruteforce",
+      "ddos",
+      "dos",
+      "heartbleed",
+      "infiltration",
+      "portscan",
+      "webattack",
+      "benign"
+    ],
+    "label_names": [
+      "Bot / C2",
+      "Brute Force",
+      "DDoS",
+      "DoS",
+      "Heartbleed",
+      "Infiltration",
+      "Port Scan",
+      "Web Attack",
+      "Benign"
+    ],
+    "confusion_matrix": [
+      [
+        391,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        3
+      ],
+      [
+        0,
+        2766,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        11992,
+        0,
+        0,
+        0,
+        0,
+        0,
+        8
+      ],
+      [
+        0,
+        0,
+        0,
+        11990,
+        0,
+        0,
+        0,
+        1,
+        9
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        6,
+        0,
+        0,
+        1
+      ],
+      [
+        0,
+        0,
+        0,
+        5,
+        0,
+        0,
+        11992,
+        1,
+        2
+      ],
+      [
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        430,
+        5
+      ],
+      [
+        131,
+        1,
+        2,
+        22,
+        1,
+        0,
+        9,
+        8,
+        17826
+      ]
+    ],
+    "train_seconds": 34.65
+  },
+  "baselines": {
+    "majority_class": {
+      "accuracy": 0.31246745130715553,
+      "balanced_accuracy": 0.1111111111111111,
+      "precision_macro": 0.03471860570079506,
+      "recall_macro": 0.1111111111111111,
+      "f1_macro": 0.05290585403274872,
+      "precision_weighted": 0.09763590812638961,
+      "recall_weighted": 0.31246745130715553,
+      "f1_weighted": 0.1487822163195725,
+      "per_class": {
+        "Bot / C2": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 394
+        },
+        "Brute Force": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 2767
+        },
+        "DDoS": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 12000
+        },
+        "DoS": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 12000
+        },
+        "Heartbleed": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 2
+        },
+        "Infiltration": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 7
+        },
+        "Port Scan": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 12000
+        },
+        "Web Attack": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 436
+        },
+        "Benign": {
+          "precision": 0.31246745130715553,
+          "recall": 1.0,
+          "f1": 0.4761526862947385,
+          "support": 18000
+        }
+      },
+      "labels": [
+        "bot",
+        "bruteforce",
+        "ddos",
+        "dos",
+        "heartbleed",
+        "infiltration",
+        "portscan",
+        "webattack",
+        "benign"
+      ],
+      "label_names": [
+        "Bot / C2",
+        "Brute Force",
+        "DDoS",
+        "DoS",
+        "Heartbleed",
+        "Infiltration",
+        "Port Scan",
+        "Web Attack",
+        "Benign"
+      ],
+      "confusion_matrix": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          394
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          2767
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          12000
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          12000
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          2
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          7
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          12000
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          436
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          18000
+        ]
+      ],
+      "description": "Always predicts the most frequent training class. A model must beat this to be useful."
+    },
+    "logistic_regression": {
+      "accuracy": 0.9650730826650001,
+      "balanced_accuracy": 0.788678968662822,
+      "precision_macro": 0.8029428790891386,
+      "recall_macro": 0.788678968662822,
+      "f1_macro": 0.7761048564502316,
+      "precision_weighted": 0.9619544565504964,
+      "recall_weighted": 0.9650730826650001,
+      "f1_weighted": 0.9619747684241489,
+      "per_class": {
+        "Bot / C2": {
+          "precision": 0.3888888888888889,
+          "recall": 0.017766497461928935,
+          "f1": 0.03398058252427184,
+          "support": 394
+        },
+        "Brute Force": {
+          "precision": 0.896125040703354,
+          "recall": 0.9945789663895916,
+          "f1": 0.9427886262418637,
+          "support": 2767
+        },
+        "DDoS": {
+          "precision": 0.9891798133311307,
+          "recall": 0.998,
+          "f1": 0.9935703322686357,
+          "support": 12000
+        },
+        "DoS": {
+          "precision": 0.9601535069813015,
+          "recall": 0.9799166666666667,
+          "f1": 0.9699344248773044,
+          "support": 12000
+        },
+        "Heartbleed": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 2
+        },
+        "Infiltration": {
+          "precision": 0.2857142857142857,
+          "recall": 0.2857142857142857,
+          "f1": 0.2857142857142857,
+          "support": 7
+        },
+        "Port Scan": {
+          "precision": 0.9654366741862713,
+          "recall": 0.9985833333333334,
+          "f1": 0.9817302965754547,
+          "support": 12000
+        },
+        "Web Attack": {
+          "precision": 0.7707509881422925,
+          "recall": 0.8944954128440367,
+          "f1": 0.8280254777070064,
+          "support": 436
+        },
+        "Benign": {
+          "precision": 0.9702367138547227,
+          "recall": 0.9290555555555555,
+          "f1": 0.9491996821432626,
+          "support": 18000
+        }
+      },
+      "labels": [
+        "bot",
+        "bruteforce",
+        "ddos",
+        "dos",
+        "heartbleed",
+        "infiltration",
+        "portscan",
+        "webattack",
+        "benign"
+      ],
+      "label_names": [
+        "Bot / C2",
+        "Brute Force",
+        "DDoS",
+        "DoS",
+        "Heartbleed",
+        "Infiltration",
+        "Port Scan",
+        "Web Attack",
+        "Benign"
+      ],
+      "confusion_matrix": [
+        [
+          7,
+          0,
+          0,
+          0,
+          0,
+          0,
+          97,
+          0,
+          290
+        ],
+        [
+          0,
+          2752,
+          0,
+          5,
+          0,
+          0,
+          4,
+          1,
+          5
+        ],
+        [
+          0,
+          2,
+          11976,
+          11,
+          0,
+          0,
+          1,
+          0,
+          10
+        ],
+        [
+          2,
+          39,
+          15,
+          11759,
+          0,
+          0,
+          0,
+          0,
+          185
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          2,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          2,
+          0,
+          0,
+          5
+        ],
+        [
+          0,
+          0,
+          0,
+          11,
+          0,
+          0,
+          11983,
+          1,
+          5
+        ],
+        [
+          0,
+          30,
+          0,
+          3,
+          0,
+          0,
+          0,
+          390,
+          13
+        ],
+        [
+          9,
+          248,
+          116,
+          458,
+          0,
+          5,
+          327,
+          114,
+          16723
+        ]
+      ],
+      "train_seconds": 47.01,
+      "description": "Multinomial logistic regression on the same features - a linear baseline for comparison with the tree ensemble."
+    }
+  },
+  "feature_importances": [
+    {
+      "feature": "Destination Port",
+      "importance": 0.11414352174584749
+    },
+    {
+      "feature": "Init_Win_bytes_backward",
+      "importance": 0.0498749049734781
+    },
+    {
+      "feature": "Total Length of Bwd Packets",
+      "importance": 0.044621898201987024
+    },
+    {
+      "feature": "Bwd Packet Length Mean",
+      "importance": 0.0366262352393089
+    },
+    {
+      "feature": "Total Length of Fwd Packets",
+      "importance": 0.03508846687365662
+    },
+    {
+      "feature": "Fwd Packet Length Max",
+      "importance": 0.03365240953527293
+    },
+    {
+      "feature": "Packet Length Mean",
+      "importance": 0.03282213097836198
+    },
+    {
+      "feature": "Avg Bwd Segment Size",
+      "importance": 0.03102238850049568
+    },
+    {
+      "feature": "Bwd Packet Length Max",
+      "importance": 0.02753826279533966
+    },
+    {
+      "feature": "min_seg_size_forward",
+      "importance": 0.027315211345781205
+    },
+    {
+      "feature": "Subflow Bwd Bytes",
+      "importance": 0.02710103476497151
+    },
+    {
+      "feature": "Average Packet Size",
+      "importance": 0.025537900789938492
+    },
+    {
+      "feature": "Subflow Fwd Bytes",
+      "importance": 0.025337436716048885
+    },
+    {
+      "feature": "Fwd Packet Length Mean",
+      "importance": 0.0231955261243728
+    },
+    {
+      "feature": "Max Packet Length",
+      "importance": 0.02223738098120704
+    },
+    {
+      "feature": "Avg Fwd Segment Size",
+      "importance": 0.021848426868466757
+    },
+    {
+      "feature": "Fwd Header Length",
+      "importance": 0.021225928491305137
+    },
+    {
+      "feature": "Init_Win_bytes_forward",
+      "importance": 0.02022656143654335
+    },
+    {
+      "feature": "Bwd Header Length",
+      "importance": 0.019835782493770177
+    },
+    {
+      "feature": "Bwd Packet Length Min",
+      "importance": 0.0192903635404462
+    }
+  ],
+  "elapsed_seconds": 88.14,
+  "model_file_bytes": 4607822,
+  "notes": [
+    "All metrics are computed on a held-out 20% stratified test split.",
+    "The test split is never used for fitting.",
+    "Rare classes (Heartbleed, Infiltration) have very few samples in CIC-IDS2017, so their per-class scores are statistically weak.",
+    "Category colours/severities in the UI are author-defined, not model output."
+  ]
+}

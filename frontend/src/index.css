@@ -1,0 +1,185 @@
+@import "tailwindcss";
+
+@theme {
+  /* ---- SentinelAI palette: dark navy with cyan accents ---- */
+  --color-ink-950: #04070f;
+  --color-ink-900: #070c1a;
+  --color-ink-850: #0a1122;
+  --color-ink-800: #0d1528;
+  --color-ink-700: #132039;
+  --color-ink-600: #1b2c4a;
+  --color-ink-500: #26395c;
+
+  --color-mute-400: #7b8db0;
+  --color-mute-300: #9aacca;
+  --color-mute-200: #c3d0e4;
+
+  --color-cyan-glow: #22d3ee;
+  --color-cyan-deep: #0891b2;
+
+  --color-sev-critical: #f43f5e;
+  --color-sev-high: #fb923c;
+  --color-sev-medium: #fbbf24;
+  --color-sev-low: #38bdf8;
+  --color-sev-info: #22d3ee;
+
+  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", ui-monospace, Menlo, monospace;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(1200px 600px at 78% -12%, rgba(34, 211, 238, 0.1), transparent 60%),
+    radial-gradient(900px 500px at -10% 8%, rgba(56, 189, 248, 0.07), transparent 55%),
+    #04070f;
+  color: #e6edf9;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Thin, dark scrollbars that fit the console look */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #1b2c4a transparent;
+}
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #1b2c4a;
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #26395c;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@layer components {
+  .panel {
+    background: linear-gradient(180deg, rgba(13, 21, 40, 0.92), rgba(8, 13, 27, 0.92));
+    border: 1px solid #16233d;
+    border-radius: 14px;
+  }
+
+  .panel-glow {
+    box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.08), 0 18px 40px -28px rgba(34, 211, 238, 0.5);
+  }
+
+  .label-mono {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #7b8db0;
+  }
+
+  .table-row-hover:hover {
+    background: rgba(34, 211, 238, 0.05);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    border-radius: 9px;
+    padding: 0.5rem 0.9rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition: all 0.15s ease;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .btn-primary {
+    background: linear-gradient(180deg, #22d3ee, #0e9fbc);
+    color: #04121a;
+    box-shadow: 0 8px 22px -14px rgba(34, 211, 238, 0.9);
+  }
+  .btn-primary:not(:disabled):hover {
+    filter: brightness(1.08);
+  }
+  .btn-ghost {
+    background: rgba(19, 32, 57, 0.75);
+    border: 1px solid #1e2f4f;
+    color: #c3d0e4;
+  }
+  .btn-ghost:not(:disabled):hover {
+    border-color: #22d3ee55;
+    color: #e6edf9;
+  }
+
+  .field {
+    background: #0a1122;
+    border: 1px solid #1e2f4f;
+    border-radius: 9px;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.82rem;
+    color: #e6edf9;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .field:focus {
+    border-color: #22d3ee;
+    box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.15);
+  }
+  .field::placeholder {
+    color: #5d6f90;
+  }
+  select.field {
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, #7b8db0 50%),
+      linear-gradient(135deg, #7b8db0 50%, transparent 50%);
+    background-position: calc(100% - 16px) 55%, calc(100% - 11px) 55%;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+    padding-right: 1.8rem;
+  }
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.82);
+  }
+}
+.live-dot {
+  animation: pulse-dot 2.2s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+.skeleton {
+  background: linear-gradient(90deg, #0d1528 25%, #16233d 50%, #0d1528 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s linear infinite;
+  border-radius: 8px;
+}

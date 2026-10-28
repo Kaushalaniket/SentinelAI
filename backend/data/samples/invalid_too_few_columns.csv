@@ -1,0 +1,21 @@
+Destination Port,Flow Duration,Label,Unrelated Column
+80,98707829,DoS Hulk,not a CIC feature
+80,5521744,Web Attack ï¿½ Brute Force,not a CIC feature
+80,85737109,DoS Hulk,not a CIC feature
+80,5462062,Web Attack ï¿½ XSS,not a CIC feature
+53,30892,BENIGN,not a CIC feature
+80,103689783,DoS slowloris,not a CIC feature
+53,191,BENIGN,not a CIC feature
+444,119296592,Heartbleed,not a CIC feature
+21952,437385,BENIGN,not a CIC feature
+443,117090919,BENIGN,not a CIC feature
+80,6088968,DDoS,not a CIC feature
+21,3,FTP-Patator,not a CIC feature
+52920,32,Bot,not a CIC feature
+80,63,Web Attack ï¿½ Brute Force,not a CIC feature
+80,11990,DoS Hulk,not a CIC feature
+22,13071308,SSH-Patator,not a CIC feature
+61248,3,BENIGN,not a CIC feature
+8080,61144,Bot,not a CIC feature
+80,6126860,DDoS,not a CIC feature
+21,8848600,FTP-Patator,not a CIC feature

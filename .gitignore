@@ -1,0 +1,24 @@
+# ---- dependencies ----
+frontend/node_modules/
+backend/.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# ---- raw dataset (495 MB, re-download with scripts/download_dataset.py) ----
+backend/data/raw/
+
+# ---- regenerable build artefacts ----
+backend/data/artifacts/train_sample.parquet
+frontend/dist/
+
+# ---- runtime state (rebuilt automatically on first API start) ----
+backend/data/sentinelai.db
+backend/data/sentinelai.db-*
+backend/data/ipsum_cache.txt
+
+# ---- logs / local secrets ----
+*.log
+.env
+.env.*
+!.env.example
