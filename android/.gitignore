@@ -1,25 +1,26 @@
 # Gradle build outputs
 android/app/build/
-android/app/proguard-mapping.txt
-android/app/outputs/
 
-# Gradle wrapper jar (must be installed locally)
+# Kotlin/Java build outputs
+build/
+**/build/
+.gradle/
+**/*.class
+**/*.apk
+**/*.aab
+**/*.tmp
+**/*.ktmp/
 
 # Machine-specific SDK path
 local.properties
 
-# Compiled Kotlin
-**/*.class
-**/*.jar
-**/*.apk
-**/*.aab
-
 # IDE
 .idea/
 *.iml
-*.sysout
 
 # OS
 .DS_Store
-EOF
-echo "=== android/.gitignore written ===" && cat SentinelAI/android/.gitignore
+
+# Signing material is never committed
+*.jks
+*.keystore
