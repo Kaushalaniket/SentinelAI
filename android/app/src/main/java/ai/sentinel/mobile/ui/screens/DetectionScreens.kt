@@ -1,7 +1,10 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package ai.sentinel.mobile.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -45,25 +48,28 @@ private fun AlertRow(
 ) {
     val category = Category.fromKey(alert.category)
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        FlowRow(
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             Badge(
                 DetectionSource.fromKey(alert.kind).label,
                 if (alert.kind == DetectionSource.AI.key) SentinelGreen else SentinelAmber
             )
             Text(
-                "  ${category?.label ?: alert.category}",
+                category?.label ?: alert.category,
                 style = MaterialTheme.typography.bodyMedium
             )
             if (alert.confidence != null) {
                 Text(
-                    "  ${Formatters.percent(alert.confidence!!)}",
+                    Formatters.percent(alert.confidence!!),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             if (alert.acknowledged) {
                 Text(
-                    "  acknowledged",
+                    "acknowledged",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -100,7 +106,7 @@ fun DetectionScreen(vm: AppViewModel) {
 
     ScreenScaffold(
         title = "AI Threat Detection",
-        subtitle = "Model scoring runs on this tablet. No traffic leaves the device."
+        subtitle = "Model scoring runs on this device. No traffic leaves it."
     ) {
         Panel(
             title = "Model",
@@ -153,7 +159,7 @@ fun DetectionScreen(vm: AppViewModel) {
                     )
                 }
                 if (result != null && !vm.selfTestRunning) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(
                             result.summary,
                             style = MaterialTheme.typography.bodySmall,
@@ -217,14 +223,14 @@ fun DetectionScreen(vm: AppViewModel) {
             if (series.isEmpty()) {
                 Text("No classifications yet", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
-                LineChart(points = series, lineColor = SentinelBlue, areaColor = SentinelBlue.copy(alpha = 0.15f), width = 140.dp, height = 52.dp)
+                LineChart(points = series, lineColor = SentinelBlue, areaColor = SentinelBlue.copy(alpha = 0.15f))
             }
         }
 
         Panel(title = "What the number does not mean") {
             Text(
                 "The model's held-out CIC-IDS2017 macro-F1 of 0.9499 is a research dataset result. " +
-                    "It is not a measurement of accuracy on this tablet's traffic, and the app never " +
+                    "It is not a measurement of accuracy on this device's traffic, and the app never " +
                     "presents it as one. Real-world accuracy here is unknown until you measure it.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -246,7 +252,10 @@ fun AlertsScreen(vm: AppViewModel) {
         title = "Alerts",
         subtitle = "Every alert carries either AI or Rule provenance."
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             OutlinedButton(onClick = { vm.acknowledgeAll(); reload++ }) { Text("Acknowledge all") }
             OutlinedButton(onClick = { vm.exportAlerts { }; reload++ }) { Text("Export CSV") }
         }

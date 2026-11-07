@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package ai.sentinel.mobile.ui.screens
 
 import android.content.Context
@@ -5,6 +7,7 @@ import android.content.Intent
 import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -39,6 +42,8 @@ import ai.sentinel.mobile.ui.components.Badge
 import ai.sentinel.mobile.ui.components.EmptyState
 import ai.sentinel.mobile.ui.components.InfoRow
 import ai.sentinel.mobile.ui.components.LiveGauge
+import ai.sentinel.mobile.ui.adaptive.LocalAdaptive
+import ai.sentinel.mobile.ui.adaptive.ResponsiveGrid
 import ai.sentinel.mobile.ui.components.Panel
 import ai.sentinel.mobile.ui.components.SectionHeading
 import ai.sentinel.mobile.ui.theme.SentinelAmber
@@ -83,7 +88,10 @@ fun FirewallScreen(vm: AppViewModel) {
     ) {
         Panel(title = "Add a block rule") {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     listOf("ip" to "IP", "cidr" to "Range", "port" to "Port", "domain" to "Domain")
                         .forEach { (key, label) ->
                             FilterChip(
@@ -188,7 +196,7 @@ fun FirewallScreen(vm: AppViewModel) {
                     "of the device's traffic. Port and domain rules are matched on traffic the tunnel " +
                     "already sees, which means port rules only apply during a capture session. Blocking " +
                     "DNS servers, the gateway or SentinelAI's own address is refused, because it would " +
-                    "cut the tablet off.",
+                    "cut the device off.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -234,20 +242,27 @@ fun ReportsScreen(vm: AppViewModel) {
         title = "Reports",
         subtitle = "Aggregated from stored rows. Nothing is extrapolated."
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             listOf(1 to "24 hours", 7 to "7 days", 30 to "30 days").forEach { (value, label) ->
                 FilterChip(selected = days == value, onClick = { days = value }, label = { Text(label) })
             }
         }
 
         Panel(title = "Last $days day(s)") {
-            Column {
-                LiveGauge("Flows", summary.flows24h.toString(), color = "#3FB950")
-                LiveGauge("Threat flows", summary.threats24h.toString(), color = "#E5534B")
-                LiveGauge("Alerts", summary.alerts24h.toString(), color = "#D29922")
-                LiveGauge("Blocked", summary.blocked24h.toString(), color = "#6366F1")
-                LiveGauge("Observed bytes", Formatters.bytes(summary.bytes24h), color = "#22D3EE")
-                LiveGauge("Total stored", summary.totalFlows.toString(), color = "#2F81F7")
+            val metrics = LocalAdaptive.current
+            val gauges = listOf(
+                Triple("Flows", summary.flows24h.toString(), "#3FB950"),
+                Triple("Threat flows", summary.threats24h.toString(), "#E5534B"),
+                Triple("Alerts", summary.alerts24h.toString(), "#D29922"),
+                Triple("Blocked", summary.blocked24h.toString(), "#6366F1"),
+                Triple("Observed bytes", Formatters.bytes(summary.bytes24h), "#22D3EE"),
+                Triple("Total stored", summary.totalFlows.toString(), "#2F81F7")
+            )
+            ResponsiveGrid(items = gauges, minItemWidth = metrics.gaugeMinWidth) { gauge ->
+                LiveGauge(gauge.first, gauge.second, color = gauge.third, modifier = Modifier.fillMaxWidth())
             }
         }
 
@@ -354,7 +369,7 @@ fun SettingsScreen(vm: AppViewModel, onEnableProtection: () -> Unit) {
                     valueRange = 15f..180f
                 )
                 Text(
-                    "Longer windows capture more flows but leave the tablet without internet for longer.",
+                    "Longer windows capture more flows but leave the device without internet for longer.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -376,7 +391,10 @@ fun SettingsScreen(vm: AppViewModel, onEnableProtection: () -> Unit) {
                 if (!confirmClear) {
                     OutlinedButton(onClick = { confirmClear = true }) { Text("Clear all history") }
                 } else {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         Button(
                             onClick = { vm.clearAllData(); confirmClear = false },
                             colors = ButtonDefaults.buttonColors(containerColor = SentinelRed)
@@ -413,14 +431,14 @@ fun SettingsScreen(vm: AppViewModel, onEnableProtection: () -> Unit) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 listOf(
                     "Protection mode routes only DNS and the destinations you block. Other traffic never enters the tunnel.",
-                    "A capture session routes everything for a bounded window and drops it, so the tablet has no internet until the window ends.",
+                    "A capture session routes everything for a bounded window and drops it, so the device has no internet until the window ends.",
                     "TCP is never forwarded. Re-injecting TCP requires a full userspace TCP/IP stack.",
                     "HTTPS payloads are invisible. Detection uses connection metadata and flow shape only.",
                     "QUIC (UDP/443) hides TLS metadata; it is visible only as a flow.",
                     "Encrypted DNS (DoH/DoT) hides domain names. Only plain UDP/53 is readable.",
                     "ICMP and non-TCP/UDP protocols are counted, never inspected.",
                     "Only one VPN can be active; enabling SentinelAI disconnects any other VPN.",
-                    "The classifier was trained on CIC-IDS2017 test-network traffic. Accuracy on this tablet is unmeasured."
+                    "The classifier was trained on CIC-IDS2017 test-network traffic. Accuracy on this device is unmeasured."
                 ).forEach { line ->
                     Row {
                         Text("•  ", color = SentinelAmber)

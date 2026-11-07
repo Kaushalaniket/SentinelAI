@@ -2,40 +2,32 @@ package ai.sentinel.mobile.ui.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
-
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.Size
-
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import ai.sentinel.mobile.ui.adaptive.LocalAdaptive
 import ai.sentinel.mobile.ui.theme.SentinelBlue
-import ai.sentinel.mobile.ui.theme.SentinelGreen
-import ai.sentinel.mobile.ui.theme.SentinelNavy
-import ai.sentinel.mobile.ui.theme.SentinelRed
 import ai.sentinel.mobile.ui.theme.SentinelCard
 import ai.sentinel.mobile.ui.theme.SentinelGrid
 import ai.sentinel.mobile.ui.theme.SentinelLine
@@ -45,6 +37,10 @@ import ai.sentinel.mobile.ui.theme.SentinelWave
 import kotlin.math.max
 import kotlin.math.min
 
+/**
+ * Line + area chart. [height] defaults to the size-class chart height, so the same panel gets a
+ * taller plot on a 13" tablet and a compact one on a phone.
+ */
 @Composable
 fun LineChart(
     points: List<Pair<Float, Float>>,
@@ -54,51 +50,65 @@ fun LineChart(
     gridColor: Color = SentinelGrid,
     labelColor: Color = SentinelTextMuted,
     width: Dp = 140.dp,
-    height: Dp = 72.dp,
+    height: Dp? = null,
 ) {
-    Box(modifier = modifier) {
-        Canvas(modifier = Modifier.fillMaxWidth().height(height)) {
+    val chartHeight = height ?: LocalAdaptive.current.chartHeight
+    Box(modifier = modifier.fillMaxWidth()) {
+        Canvas(modifier = Modifier.fillMaxWidth().height(chartHeight)) {
             if (points.isEmpty()) return@Canvas
-            val count = points.size
             val series = points.map { it.second }.toFloatArray()
-            val min = series.minOrNull() ?: 0f
-            val max = series.maxOrNull() ?: 1f
-            val range = max(max - min, 1f)
+            val lowest = series.minOrNull() ?: 0f
+            val highest = series.maxOrNull() ?: 1f
+            val range = max(highest - lowest, 1f)
             val cw = size.width
             val ch = size.height
+            val gridStroke = 1.dp.toPx()
+            val padTop = 6.dp.toPx()
+            val padBottom = 6.dp.toPx()
+            val usable = (ch - padTop - padBottom).coerceAtLeast(1f)
+
             for (i in 0..6) {
-                val t = i / 6f
-                val y = ch * (1 - t)
-                drawLine(color = gridColor.copy(alpha = 0.4f), strokeWidth = 1f,
+                val y = ch * (1 - i / 6f)
+                drawLine(
+                    color = gridColor.copy(alpha = 0.4f),
+                    strokeWidth = gridStroke,
                     start = Offset(0f, y),
-                    end = Offset(cw, y))
+                    end = Offset(cw, y)
+                )
             }
-            drawLine(color = gridColor.copy(alpha = 0.2f), strokeWidth = 1f,
+            drawLine(
+                color = gridColor.copy(alpha = 0.2f),
+                strokeWidth = gridStroke,
                 start = Offset(0f, ch),
-                end = Offset(cw, ch))
+                end = Offset(cw, ch)
+            )
+
+            fun yFor(value: Float) = ch - padBottom - ((value - lowest) / range) * usable
+
             val path = Path()
             val area = Path()
-            points.forEachIndexed { idx, (px, py) ->
-                val x = (px / 100f) * cw
-                val y = ch - ((py - min) / range) * (ch - 8f) - 4f
-                val pt = Offset(x, y)
-                if (idx == 0) {
-                    path.moveTo(pt.x, pt.y)
-                    area.moveTo(pt.x, ch)
+            points.forEachIndexed { index, point ->
+                val x = (point.first / 100f) * cw
+                val y = yFor(point.second)
+                if (index == 0) {
+                    path.moveTo(x, y)
+                    area.moveTo(x, ch)
                 } else {
-                    path.lineTo(pt.x, pt.y)
-                    area.lineTo(pt.x, pt.y)
+                    path.lineTo(x, y)
+                    area.lineTo(x, y)
                 }
-                if (idx == count - 1) area.lineTo(pt.x, ch)
             }
             area.lineTo((points.last().first / 100f) * cw, ch)
             area.close()
             drawPath(area, color = areaColor)
-            drawPath(path, color = lineColor, style = Stroke(width = 2f, cap = StrokeCap.Round))
-            points.forEachIndexed { idx, (_, py) ->
-                val x = (points[idx].first / 100f) * cw
-                val y = ch - ((py - min) / range) * (ch - 8f) - 4f
-                drawCircle(color = lineColor, radius = 4f, center = Offset(x, y))
+            drawPath(path, color = lineColor, style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round))
+            val dot = 3.dp.toPx()
+            points.forEach { point ->
+                drawCircle(
+                    color = lineColor,
+                    radius = dot,
+                    center = Offset((point.first / 100f) * cw, yFor(point.second))
+                )
             }
         }
     }
@@ -114,28 +124,38 @@ fun WaveLine(
     idleColor: Color = SentinelTextMuted,
     barGap: Dp = 1.5.dp,
     showLabels: Boolean = false,
+    height: Dp? = null,
 ) {
-    Box(modifier = modifier) {
-        Canvas(modifier = Modifier.fillMaxWidth().height(96.dp)) {
+    val chartHeight = height ?: LocalAdaptive.current.chartHeight
+    Box(modifier = modifier.fillMaxWidth()) {
+        Canvas(modifier = Modifier.fillMaxWidth().height(chartHeight)) {
             val count = min(values.size, barCount)
             if (count == 0) return@Canvas
-            val barWidth = (size.width - (barGap.toPx() * (count - 1))) / count
             val gap = barGap.toPx()
-            val cy = size.height / 2f
+            val barWidth = (size.width - (gap * (count - 1))) / count
+            if (barWidth <= 0f) return@Canvas
             for (i in 0..4) {
                 val y = size.height * i / 4f
-                drawLine(color = SentinelGrid.copy(alpha = 0.3f), strokeWidth = 1f,
+                drawLine(
+                    color = SentinelGrid.copy(alpha = 0.3f),
+                    strokeWidth = 1.dp.toPx(),
                     start = Offset(0f, y),
-                    end = Offset(size.width, y))
+                    end = Offset(size.width, y)
+                )
             }
+            val corner = CornerRadius(3.dp.toPx())
             for (i in 0 until count) {
-                val h = if (i < values.size) values[i] else 0f
-                val barH = (h / 100f) * (size.height - 8f)
+                val h = values[i].coerceIn(0f, maxBarHeight)
+                val barH = (h / maxBarHeight) * (size.height - 8.dp.toPx())
                 val x = (i + 0.5f) * (barWidth + gap) - barWidth / 2f
-                val y = (size.height - barH) - 4f
-                val alpha = if (h > 5f) 1f else 0.35f
-                val barColor = if (h > 5f) activeColor else idleColor.copy(alpha = alpha)
-                drawRoundRect(color = barColor, topLeft = Offset(x, y), size = Size(barWidth, barH), cornerRadius = CornerRadius(4f))
+                val y = (size.height - barH) - 4.dp.toPx()
+                val barColor = if (h > 5f) activeColor else idleColor.copy(alpha = 0.35f)
+                drawRoundRect(
+                    color = barColor,
+                    topLeft = Offset(x, y),
+                    size = Size(barWidth, barH),
+                    cornerRadius = corner
+                )
             }
         }
     }
@@ -148,28 +168,39 @@ fun SparkLine(
     color: Color = SentinelLine,
     gridColor: Color = SentinelGrid,
     barCount: Int = 24,
+    height: Dp? = null,
 ) {
-    Box(modifier = modifier) {
-        Canvas(modifier = Modifier.fillMaxWidth().height(36.dp)) {
+    val sparkHeight = height ?: LocalAdaptive.current.sparkHeight
+    Box(modifier = modifier.fillMaxWidth()) {
+        Canvas(modifier = Modifier.fillMaxWidth().height(sparkHeight)) {
             val count = min(values.size, barCount)
             if (count == 0) return@Canvas
-            val barWidth = (size.width - (1.5f * (count - 1))) / count
             val gap = 1.5f
-            val cy = size.height / 2f
+            val barWidth = (size.width - (gap * (count - 1))) / count
+            if (barWidth <= 0f) return@Canvas
             for (i in 0..4) {
                 val y = size.height * i / 4f
-                drawLine(color = gridColor.copy(alpha = 0.2f), strokeWidth = 1f,
+                drawLine(
+                    color = gridColor.copy(alpha = 0.2f),
+                    strokeWidth = 1.dp.toPx(),
                     start = Offset(0f, y),
-                    end = Offset(size.width, y))
+                    end = Offset(size.width, y)
+                )
             }
+            val centerY = size.height / 2f
+            val corner = CornerRadius(2.dp.toPx())
             for (i in 0 until count) {
-                val h = if (i < values.size) values[i] else 0f
-                val barH = (h / 100f) * (size.height - 6f)
+                val h = values[i].coerceIn(0f, 100f)
+                val barH = (h / 100f) * (size.height - 6.dp.toPx())
                 val x = (i + 0.5f) * (barWidth + gap) - barWidth / 2f
-                val y = cy - barH / 2f
-                val alpha = if (h > 5f) 1f else 0.25f
-                val barColor = if (h > 5f) color else color.copy(alpha = alpha)
-                drawRoundRect(color = barColor, topLeft = Offset(x, y), size = Size(barWidth, barH), cornerRadius = CornerRadius(3f))
+                val y = centerY - barH / 2f
+                val barColor = if (h > 5f) color else color.copy(alpha = 0.25f)
+                drawRoundRect(
+                    color = barColor,
+                    topLeft = Offset(x, y),
+                    size = Size(barWidth, barH),
+                    cornerRadius = corner
+                )
             }
         }
     }
@@ -193,12 +224,28 @@ fun LiveGauge(
     modifier: Modifier = Modifier
 ) {
     val gaugeColor = safeColor(color)
-    Card(modifier = modifier, colors = CardDefaults.cardColors(containerColor = SentinelCard), shape = RoundedCornerShape(14.dp)) {
-        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(title.uppercase(), style = MaterialTheme.typography.labelSmall, color = SentinelTextSecondary, letterSpacing = 0.6.sp)
-                Text(value, style = MaterialTheme.typography.headlineSmall, color = gaugeColor, fontWeight = FontWeight.Bold)
-            }
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = SentinelCard),
+        shape = RoundedCornerShape(14.dp)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp)) {
+            Text(
+                title.uppercase(),
+                style = MaterialTheme.typography.labelSmall,
+                color = SentinelTextSecondary,
+                letterSpacing = 0.6.sp,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                value,
+                style = MaterialTheme.typography.headlineSmall,
+                color = gaugeColor,
+                fontWeight = FontWeight.Bold,
+                maxLines = 2
+            )
         }
     }
 }

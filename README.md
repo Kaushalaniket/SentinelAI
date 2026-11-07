@@ -570,3 +570,73 @@ keeps normal internet and a block rule really drops matching packets. Full 70-fe
 capture only happens in a bounded capture session, which pauses internet for that window because
 a non-root VPN cannot re-inject TCP without a userspace TCP/IP stack. Nothing is simulated:
 counters are incremented where the work happens, and unclassified flows stay unclassified.
+
+---
+
+## Adaptive layout for every screen size (v1.1.0)
+
+Version 1.1.0 replaces the tablet-first layout with one built from Material 3 window size
+classes. A single arm64-v8a APK now serves 5–6" phones, large phones, foldables, 7–8" tablets and
+10–13" tablets including the Lenovo Idea Tab Pro, in portrait and landscape.
+
+### Width size classes
+
+| Class | Width | Typical devices | Navigation | Content |
+|---|---|---|---|---|
+| Compact | 0–599 dp | 5–6" phones, folded flip covers | Bottom bar (Dashboard, Live, Traffic, Alerts) + "More" sheet with the other five modules | One column, 14 dp padding, 140 dp minimum tile width |
+| Medium | 600–839 dp | Large phones in landscape, 7–8" tablets, unfolded foldables | Scrollable icon-and-label rail, 92 dp | Two readable panes when both fit, 156 dp tiles |
+| Expanded | 840 dp+ | 10–13" tablets, Idea Tab Pro | Persistent 220–248 dp sidebar with module list and live tunnel status | Two-to-five columns, 22 dp padding, 168–172 dp tiles, content capped at 1240 dp |
+
+`calculateWindowSizeClass(activity)` supplies the class, so rotation, split-screen, desktop
+windowing and foldable unfold/refold all flow through one value; the activity already declares
+`configChanges` for orientation, so rotating never restarts the tunnel.
+
+### What adapts
+
+- **Navigation** — bar → rail → sidebar, as above. Every item keeps a 44–56 dp touch target, and
+  the rail/sidebar scroll, so all nine modules stay reachable on a landscape phone 360 dp tall.
+- **Spacing** — 10/12/14 dp gaps, 14/18/22 dp screen padding, 14/16/18 dp card padding.
+- **Typography** — body and headline sizes grow in sp with the size class (body small 13 → 14 sp,
+  headline medium 30 → 32 sp) and still respect the user's font-scale setting.
+- **Grids** — stat tiles, tunnel counters and report gauges lay out from the measured container
+  width. `columnsFor()` guarantees `columns × minTileWidth + gaps` fits, which stops cards
+  overflowing on a 320 dp phone.
+- **Charts** — plot heights 68/80/96 dp by class; strokes, dots and bar corners scale with
+  density; every chart fills its pane instead of a fixed 140 dp width.
+- **Two-pane panels** — dashboard, live monitor and reports pair related panels once two 340 dp
+  panes fit, and stack on phones.
+- **No clipping** — label/value rows stack under 320 dp, long IPs and domains ellipsise instead
+  of pushing badges off-screen, fixed-width labels became weights, stat values may wrap to two
+  lines, and the status strip moves its counters to a second line when narrow.
+- **Edge-to-edge** — `enableEdgeToEdge()` plus `safeDrawingPadding()` keeps content clear of the
+  status bar, navigation bar and camera cutouts, which targetSdk 35 requires.
+- **Copy** — user-facing text says "device" rather than "tablet".
+
+### Verified for this build
+
+| Check | Result |
+|---|---|
+| `assembleDebug` | pass |
+| `assembleRelease` (R8 + resource shrink, unsigned) | pass |
+| `testDebugUnitTest` | **22/22 pass**, including 7 new `AdaptiveLayoutTest` cases |
+| `assembleDebugAndroidTest` | compiles (not run — no device) |
+| Breakpoints | 320/360/411/599.9 → COMPACT; 600/673/839.9 → MEDIUM; 840/1280/1366 → EXPANDED |
+| Grid maths | 2 tiles per row on a 360 dp phone, no overflow across 280–1366 dp, 5 tiles across on a tablet |
+| Metrics | gap, padding, chart height, spark height, tile width and content cap all grow compact → expanded |
+
+### Not verified
+
+There is no Android device or emulator in this build environment, so **no layout was rendered or
+inspected visually**. Breakpoint and grid arithmetic is unit-tested; the rendered result at each
+size and in both orientations must be checked on real hardware. `NavigationTest` now opens the
+"More" sheet when a module is not in the bottom bar, but like `DatabasePersistenceTest` it is
+compile-verified only.
+
+### v1.1.0 artifacts (supersede 1.0.0)
+
+| Artifact | Size | SHA-256 |
+|---|---|---|
+| `SentinelAI-1.1.0-debug-arm64-v8a.apk` | 37,248,351 B | `29a74f0e805cc949517f90ec260f94230fc682ea847c4712f516f3d816feacaa` |
+| `SentinelAI-1.1.0-release-unsigned-arm64-v8a.apk` | 20,941,304 B | `48738cef9cb610c4e00d90955612c16093c1df9e52b2dfed6cac0f2ac43dd141` |
+
+`files/SentinelAI-APKs.sha256` holds both lines for `sha256sum -c`.

@@ -11,8 +11,9 @@ import org.junit.runner.RunWith
 
 /**
  * Smoke test for the real activity: the dashboard renders and every module is reachable.
- * Module labels appear both in the navigation (sidebar on tablets, chips on phones) and as
- * screen titles, so the first match is clicked.
+ * Navigation shape depends on the window size class (bottom bar + More sheet on phones,
+ * rail or sidebar on wider windows), so the helper opens "More" only when the label is not
+ * already on screen.
  */
 @RunWith(AndroidJUnit4::class)
 class NavigationTest {
@@ -21,6 +22,10 @@ class NavigationTest {
     val rule = createAndroidComposeRule<MainActivity>()
 
     private fun open(label: String) {
+        if (rule.onAllNodesWithText(label).fetchSemanticsNodes().isEmpty()) {
+            rule.onAllNodesWithText("More").onFirst().performClick()
+            rule.waitForIdle()
+        }
         rule.onAllNodesWithText(label).onFirst().performClick()
         rule.waitForIdle()
     }
@@ -28,7 +33,7 @@ class NavigationTest {
     @Test
     fun dashboardRendersWithHonestSubtitle() {
         rule.onAllNodesWithText("Dashboard").onFirst().assertExists()
-        rule.onAllNodesWithText("Everything below is read from this tablet's own database.")
+        rule.onAllNodesWithText("Everything below is read from this device's own database.")
             .onFirst()
             .assertExists()
     }

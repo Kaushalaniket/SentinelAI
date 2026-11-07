@@ -2,10 +2,14 @@ package ai.sentinel.mobile.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.sp
+import ai.sentinel.mobile.ui.adaptive.WindowSize
 
 val SentinelNavy = Color(0xFF0B1220)
 val SentinelBlue = Color(0xFF2F81F7)
@@ -44,7 +48,47 @@ private val Light = lightColorScheme(
     error = Color(0xFFC0392B),
 )
 
+/**
+ * Typography grows with the window so a 13" tablet does not show phone-sized text, while
+ * compact phones keep the Material 3 defaults. User font-scale settings still apply on top,
+ * because every size stays in sp.
+ */
+private fun typographyFor(size: WindowSize): Typography {
+    val base = Typography()
+    return when (size) {
+        WindowSize.COMPACT -> base
+        WindowSize.MEDIUM -> base.copy(
+            displaySmall = base.displaySmall.copy(fontSize = 38.sp, lineHeight = 44.sp),
+            headlineMedium = base.headlineMedium.copy(fontSize = 30.sp, lineHeight = 38.sp),
+            headlineSmall = base.headlineSmall.copy(fontSize = 26.sp, lineHeight = 32.sp),
+            titleMedium = base.titleMedium.copy(fontSize = 17.sp, lineHeight = 24.sp),
+            bodyLarge = base.bodyLarge.copy(fontSize = 16.sp, lineHeight = 24.sp),
+            bodyMedium = base.bodyMedium.copy(fontSize = 15.sp, lineHeight = 21.sp),
+            bodySmall = base.bodySmall.copy(fontSize = 13.sp, lineHeight = 18.sp),
+        )
+        WindowSize.EXPANDED -> base.copy(
+            displaySmall = base.displaySmall.copy(fontSize = 42.sp, lineHeight = 48.sp),
+            headlineMedium = base.headlineMedium.copy(fontSize = 32.sp, lineHeight = 40.sp),
+            headlineSmall = base.headlineSmall.copy(fontSize = 27.sp, lineHeight = 34.sp),
+            titleMedium = base.titleMedium.copy(fontSize = 18.sp, lineHeight = 25.sp),
+            bodyLarge = base.bodyLarge.copy(fontSize = 16.sp, lineHeight = 25.sp),
+            bodyMedium = base.bodyMedium.copy(fontSize = 15.sp, lineHeight = 22.sp),
+            bodySmall = base.bodySmall.copy(fontSize = 14.sp, lineHeight = 20.sp),
+            labelSmall = base.labelSmall.copy(fontSize = 11.sp, letterSpacing = 0.5.sp),
+        )
+    }
+}
+
 @Composable
-fun SentinelTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = if (darkTheme) Dark else Light, content = content)
+fun SentinelTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    size: WindowSize = WindowSize.COMPACT,
+    content: @Composable () -> Unit
+) {
+    val typography = remember(size) { typographyFor(size) }
+    MaterialTheme(
+        colorScheme = if (darkTheme) Dark else Light,
+        typography = typography,
+        content = content
+    )
 }
