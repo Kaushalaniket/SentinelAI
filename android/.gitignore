@@ -1,0 +1,26 @@
+# Gradle build outputs
+android/app/build/
+android/app/proguard-mapping.txt
+android/app/outputs/
+
+# Gradle wrapper jar (must be installed locally)
+android/gradle/wrapper/gradle-wrapper.jar
+
+# Machine-specific SDK path
+local.properties
+
+# Compiled Kotlin
+**/*.class
+**/*.jar
+**/*.apk
+**/*.aab
+
+# IDE
+.idea/
+*.iml
+*.sysout
+
+# OS
+.DS_Store
+EOF
+echo "=== android/.gitignore written ===" && cat SentinelAI/android/.gitignore

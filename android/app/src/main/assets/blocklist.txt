@@ -1,0 +1,29 @@
+# SentinelAI offline indicator list
+#
+# This is a USER-EDITABLE STARTER LIST, not a threat feed. It ships with well-known
+# advertising and tracking domains so the rule layer has something real to match on.
+# It contains no reputation data and makes no claim about any address being malicious.
+#
+# Format: one entry per line. Either an IPv4 address or a domain.
+# Domains also match their subdomains (example.com matches ads.example.com).
+# Lines starting with # are ignored.
+#
+# To block a host you have confirmed is malicious, add it here and restart protection.
+#
+# IP example (documentation range, replace with your own):
+# 203.0.113.10
+
+doubleclick.net
+googleadservices.com
+googlesyndication.com
+google-analytics.com
+adservice.google.com
+scorecardresearch.com
+adnxs.com
+criteo.com
+taboola.com
+outbrain.com
+moatads.com
+rubiconproject.com
+pubmatic.com
+advertising.com

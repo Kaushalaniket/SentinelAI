@@ -1,0 +1,5 @@
+# Development-only dependencies: ONNX export + parity verification for the Android app.
+# Not required at runtime by the FastAPI backend.
+skl2onnx==1.20.0
+onnx==1.23.2
+onnxruntime==1.31.1

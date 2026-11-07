@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">SentinelAI</string>
+    <string name="channel_threats">Threat alerts</string>
+    <string name="channel_service">Protection service</string>
+    <string name="channel_firewall">Firewall</string>
+</resources>
