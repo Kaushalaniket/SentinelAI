@@ -31,7 +31,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import ai.sentinel.mobile.ui.theme.SentinelText
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import ai.sentinel.mobile.data.db.BlockEventEntity

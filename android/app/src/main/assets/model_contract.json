@@ -11,8 +11,8 @@
   ],
   "input_dtype": "float32",
   "output_names": [
-    "output_label",
-    "output_probability"
+    "label",
+    "probabilities"
   ],
   "feature_names": [
     "Destination Port",

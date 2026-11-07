@@ -32,6 +32,7 @@ import androidx.compose.ui.geometry.Size
 
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import ai.sentinel.mobile.ui.theme.SentinelBlue
 import ai.sentinel.mobile.ui.theme.SentinelGreen
 import ai.sentinel.mobile.ui.theme.SentinelNavy
 import ai.sentinel.mobile.ui.theme.SentinelRed
@@ -90,7 +91,9 @@ fun LineChart(
                 }
                 if (idx == count - 1) area.lineTo(pt.x, ch)
             }
-            drawRect(color = areaColor, topLeft = Offset(0f, ch), size = Size(cw, ch))
+            area.lineTo((points.last().first / 100f) * cw, ch)
+            area.close()
+            drawPath(area, color = areaColor)
             drawPath(path, color = lineColor, style = Stroke(width = 2f, cap = StrokeCap.Round))
             points.forEachIndexed { idx, (_, py) ->
                 val x = (points[idx].first / 100f) * cw
@@ -172,6 +175,16 @@ fun SparkLine(
     }
 }
 
+/**
+ * Accepts a "#RRGGBB" value and never throws. A malformed value falls back to a neutral
+ * accent instead of taking the screen down.
+ */
+internal fun safeColor(value: String): Color = try {
+    Color(android.graphics.Color.parseColor(value))
+} catch (_: Throwable) {
+    SentinelBlue
+}
+
 @Composable
 fun LiveGauge(
     title: String,
@@ -179,7 +192,7 @@ fun LiveGauge(
     color: String = "#E5534B",
     modifier: Modifier = Modifier
 ) {
-    val gaugeColor = Color(android.graphics.Color.parseColor(color))
+    val gaugeColor = safeColor(color)
     Card(modifier = modifier, colors = CardDefaults.cardColors(containerColor = SentinelCard), shape = RoundedCornerShape(14.dp)) {
         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.fillMaxWidth()) {

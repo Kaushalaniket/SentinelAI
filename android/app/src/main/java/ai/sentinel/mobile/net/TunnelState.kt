@@ -12,6 +12,9 @@ import kotlinx.coroutines.flow.update
  */
 object TunnelState {
 
+    /** Number of samples kept for the dashboard charts (5 s cadence, so two minutes). */
+    private const val SERIES_CAPACITY = 24
+
     enum class Status { STOPPED, STARTING, DNS_ONLY, CAPTURE, ERROR }
 
     data class Snapshot(
@@ -62,13 +65,11 @@ object TunnelState {
     private val _blockSeries = MutableStateFlow(mutableListOf<Long>())
     val blockSeries: StateFlow<MutableList<Long>> = _blockSeries.asStateFlow()
 
-    fun pushSeries() {
-        _packetSeries.update { it.toMutableList() }
-        _bytesSeries.update { it.toMutableList() }
-        _flowSeries.update { it.toMutableList() }
-        _dnsSeries.update { it.toMutableList() }
-        _blockSeries.update { it.toMutableList() }
-    }
+    /**
+     * Called from the packet path; intentionally cheap. Samples are taken on [tick] so the
+     * charts move at a fixed cadence instead of once per packet.
+     */
+    fun pushSeries() = Unit
 
     // Live counter snapshots, refreshed each tick so the UI can show a
     // current value without reading the whole rolling series.
@@ -93,7 +94,16 @@ object TunnelState {
         _liveDns.value = snap.dnsQueries
         _liveBlocked.value = snap.blockedPackets
         _liveDropped.value = snap.droppedPackets
+
+        _packetSeries.update { append(it, snap.packetsIn) }
+        _bytesSeries.update { append(it, snap.bytesIn) }
+        _flowSeries.update { append(it, snap.flowsObserved) }
+        _dnsSeries.update { append(it, snap.dnsQueries) }
+        _blockSeries.update { append(it, snap.blockedPackets) }
     }
+
+    private fun append(series: List<Long>, value: Long): MutableList<Long> =
+        (series + value).takeLast(SERIES_CAPACITY).toMutableList()
 
     fun fail(message: String) {
         synchronized(lock) {

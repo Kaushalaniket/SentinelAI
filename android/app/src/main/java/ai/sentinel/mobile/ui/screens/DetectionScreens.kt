@@ -37,7 +37,6 @@ import ai.sentinel.mobile.ui.theme.SentinelGreen
 import ai.sentinel.mobile.ui.theme.SentinelRed
 import ai.sentinel.mobile.ui.vm.AppViewModel
 import ai.sentinel.mobile.util.Formatters
-import androidx.compose.material3.TextButton
 
 @Composable
 private fun AlertRow(

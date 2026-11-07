@@ -53,6 +53,12 @@ interface FlowDao {
     @Query("SELECT category, COUNT(*) AS hits FROM flows WHERE tsStart >= :since AND category IS NOT NULL GROUP BY category ORDER BY hits DESC")
     suspend fun categoryCounts(since: Long): List<CategoryCount>
 
+    @Query(
+        """SELECT protocol, COUNT(*) AS hits, IFNULL(SUM(bytesFwd + bytesBwd), 0) AS bytes
+           FROM flows WHERE tsStart >= :since GROUP BY protocol ORDER BY hits DESC"""
+    )
+    suspend fun protocolCounts(since: Long): List<ProtocolCount>
+
     @Query("SELECT * FROM flows WHERE tsStart >= :since ORDER BY tsStart DESC LIMIT :limit")
     suspend fun recentSince(since: Long, limit: Int): List<FlowEntity>
 
@@ -71,6 +77,8 @@ interface FlowDao {
 
 data class DestinationCount(val dstIp: String, val hits: Long, val bytes: Long)
 data class CategoryCount(val category: String, val hits: Long)
+data class ProtocolCount(val protocol: String, val hits: Long, val bytes: Long)
+data class SeverityCount(val severity: String, val hits: Long)
 
 @Dao
 interface AlertDao {
@@ -91,6 +99,12 @@ interface AlertDao {
 
     @Query("SELECT COUNT(*) FROM alerts WHERE ts >= :since AND severity = 'high'")
     suspend fun highSeveritySince(since: Long): Long
+
+    @Query("SELECT COUNT(*) FROM alerts WHERE ts >= :since AND severity = 'high' AND acknowledged = 0")
+    suspend fun unacknowledgedHighSince(since: Long): Long
+
+    @Query("SELECT severity, COUNT(*) AS hits FROM alerts WHERE ts >= :since GROUP BY severity ORDER BY hits DESC")
+    suspend fun severityCounts(since: Long): List<SeverityCount>
 
     @Query("UPDATE alerts SET acknowledged = 1 WHERE id = :id")
     suspend fun acknowledge(id: Long)

@@ -475,3 +475,98 @@ Optional environment variables are documented in [`backend/.env.example`](backen
 The CIC-IDS2017 dataset is distributed by the Canadian Institute for Cybersecurity under its own
 terms — review them before redistributing. SentinelAI's own source code is provided for academic
 and evaluation purposes.
+
+---
+
+## Android build, verification and delivery (v1.0.0)
+
+### Build
+
+```bash
+cd android
+export JAVA_HOME=/path/to/jdk17
+export ANDROID_HOME=/path/to/android-sdk
+# local.properties with sdk.dir=<your sdk> is required and is git-ignored
+./gradlew assembleDebug          # installable debug APK
+./gradlew testDebugUnitTest      # 15 JVM tests
+./gradlew assembleDebugAndroidTest  # compiles instrumentation tests
+./gradlew assembleRelease        # minified; unsigned unless a keystore is supplied
+```
+
+The Gradle wrapper is real and complete (`gradlew`, `gradlew.bat`,
+`gradle/wrapper/gradle-wrapper.jar`, `gradle-wrapper.properties`, Gradle 8.9), so no local
+Gradle installation is needed.
+
+Release signing is opt-in. Put a keystore at `android/app/sentinelai-release.jks` and export
+`SENTINEL_KEYSTORE_PASSWORD`, `SENTINEL_KEY_PASSWORD` and optionally `SENTINEL_KEY_ALIAS`.
+Without them the release build still completes and produces an **unsigned** APK instead of
+failing. No keystore or password is stored in this repository.
+
+### Artifacts
+
+| Artifact | Size | SHA-256 |
+|---|---|---|
+| `SentinelAI-1.0.0-debug-arm64-v8a.apk` (installable) | 37,329,380 B | `8937263ca9a2076200c979e63c606f8af1c3ee34cb2fa3111a33a28f12d894d3` |
+| `SentinelAI-1.0.0-release-unsigned-arm64-v8a.apk` | 20,816,280 B | `07f4bfeca188d557eded444215c2aa5f797155d4cdc94660f80c4b28894fb9e1` |
+
+Package `ai.sentinel.mobile.debug` (debug) / `ai.sentinel.mobile` (release), version 1.0.0,
+minSdk 26, targetSdk 35, ABI `arm64-v8a`, includes `libonnxruntime.so` and the 11 MB model.
+
+Verify a download with:
+
+```bash
+sha256sum -c SentinelAI-APKs.sha256
+```
+
+### Checks that were actually executed
+
+| Check | Result |
+|---|---|
+| Gradle wrapper usable (`./gradlew --version`) | pass, Gradle 8.9 on JDK 17 |
+| Clean `assembleDebug` | pass, APK generated |
+| `testDebugUnitTest` (packet parsing, flow aggregation, firewall policy, DNS, capacity) | **15/15 pass, 0 failures** |
+| `assembleDebugAndroidTest` | compiles |
+| `assembleRelease` with R8 minify + resource shrink | pass (unsigned APK) |
+| APK structure (`aapt dump badging`) | package, sdk 26/35, label, `native-code: arm64-v8a` |
+| ONNX model I/O | `input: [None,70] float32` → `label: [None] string`, `probabilities: [None,9] float32` |
+| ONNX parity against bundled reference labels (`sample_flows.csv` + `sample_expected.json`) | **140/140 agree** |
+| Missing-feature path (features sent as NaN, graph imputer) | runs, no error |
+
+### Checks that were NOT executed here
+
+There is no Android device or emulator in the build environment (no system image, and the
+emulator cannot use hardware acceleration), so the following are **unverified** and must be
+checked on the Lenovo Idea Tab Pro:
+
+- Application launch and on-screen navigation (the instrumentation tests in
+  `app/src/androidTest` cover this but were only compiled, never run)
+- Room persistence on device (instrumented `DatabasePersistenceTest`, compiled only)
+- VPN consent dialog, foreground notification, tunnel start/stop and network continuity
+- Firewall block/unblock behaviour against a real destination
+- On-device ONNX inference via ONNX Runtime Mobile (`SelfTest` in Settings → Model diagnostics)
+- Portrait and landscape rendering
+
+### Defects fixed in this pass
+
+- `LiveGauge` parsed `Color.toString()` with `android.graphics.Color.parseColor`, which throws
+  and would have crashed the Dashboard and Live Monitor on open. It now uses a safe parser.
+- The chart series in `TunnelState` were never populated; every sparkline and waveline was
+  blank. Samples are now taken on the 5 s tick, and the UI normalises counters to 0–100.
+- The Traffic screen title was drawn in `#0B1220` on a `#070B16` background (invisible).
+- `gradle/wrapper/gradle-wrapper.jar` was a 135-byte placeholder, so `./gradlew` could not run.
+- Duplicate/conflicting Compose dependency declarations (a pinned `material3:1.2.1` fighting the
+  BOM) were removed; all Compose artifacts now come from the BOM.
+- `assembleRelease` failed whenever a keystore was present without password env vars.
+- `model_contract.json` listed stale output names; corrected to the names the graph actually exposes.
+- The left navigation was a bare icon rail; it is now a persistent 232 dp sidebar with module
+  labels, selection state and a live tunnel status footer, used in tablet portrait and landscape.
+- Dashboard gained the missing enterprise panels: security health score (with its deduction
+  formula shown), protocol distribution and alert severity distribution.
+
+### Firewall and monitoring scope (unchanged, honest)
+
+Protection mode routes only DNS and the destinations covered by your block rules, so the tablet
+keeps normal internet and a block rule really drops matching packets. Full 70-feature flow
+capture only happens in a bounded capture session, which pauses internet for that window because
+a non-root VPN cannot re-inject TCP without a userspace TCP/IP stack. Nothing is simulated:
+counters are incremented where the work happens, and unclassified flows stay unclassified.

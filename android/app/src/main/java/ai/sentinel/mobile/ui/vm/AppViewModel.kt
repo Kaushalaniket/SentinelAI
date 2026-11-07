@@ -12,7 +12,9 @@ import ai.sentinel.mobile.data.db.BlockEventEntity
 import ai.sentinel.mobile.data.db.CategoryCount
 import ai.sentinel.mobile.data.db.DestinationCount
 import ai.sentinel.mobile.data.db.FlowEntity
+import ai.sentinel.mobile.data.db.ProtocolCount
 import ai.sentinel.mobile.data.db.RuleEntity
+import ai.sentinel.mobile.data.db.SeverityCount
 import ai.sentinel.mobile.net.PolicyEngine
 import ai.sentinel.mobile.net.TunnelState
 import ai.sentinel.mobile.net.VpnController
@@ -79,12 +81,31 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         val flows24h: Long = 0,
         val threats24h: Long = 0,
         val alerts24h: Long = 0,
+        val critical24h: Long = 0,
         val blocked24h: Long = 0,
         val bytes24h: Long = 0,
         val totalFlows: Long = 0,
         val topDestinations: List<DestinationCount> = emptyList(),
-        val categories: List<CategoryCount> = emptyList()
-    )
+        val categories: List<CategoryCount> = emptyList(),
+        val protocols: List<ProtocolCount> = emptyList(),
+        val severities: List<SeverityCount> = emptyList()
+    ) {
+        /**
+         * A transparent, reproducible score — not a vendor metric. The exact deduction is
+         * documented in the dashboard so nobody has to guess where the number came from:
+         *  - up to 45 points for the share of observed flows classified as a threat
+         *  - up to 25 points for unresolved high-severity alerts (5 each)
+         *  - 10 points while nothing is being monitored
+         */
+        val healthScore: Int
+            get() {
+                val threatShare = if (flows24h <= 0) 0.0 else threats24h.toDouble() / flows24h
+                val threatPenalty = (threatShare * 45.0).toInt().coerceIn(0, 45)
+                val alertPenalty = (critical24h * 5L).coerceIn(0L, 25L).toInt()
+                val idlePenalty = if (flows24h == 0L) 10 else 0
+                return (100 - threatPenalty - alertPenalty - idlePenalty).coerceIn(0, 100)
+            }
+    }
 
     var dashboard by mutableStateOf(Dashboard())
         private set
@@ -103,19 +124,24 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun refreshDashboard() {
-        viewModelScope.launch {
-            val since = System.currentTimeMillis() - 86_400_000L
-            dashboard = Dashboard(
-                flows24h = container.flows.countSince(since),
-                threats24h = container.flows.threatsSince(since),
-                alerts24h = container.alerts.countSince(since),
-                blocked24h = container.blocks.countSince(since),
-                bytes24h = container.flows.bytesSince(since),
-                totalFlows = container.flows.count(),
-                topDestinations = container.flows.topDestinations(since, 8),
-                categories = container.flows.categoryCounts(since)
-            )
-        }
+        viewModelScope.launch { dashboard = loadDashboard(1) }
+    }
+
+    private suspend fun loadDashboard(days: Int): Dashboard = withContext(Dispatchers.IO) {
+        val since = System.currentTimeMillis() - days * 86_400_000L
+        Dashboard(
+            flows24h = container.flows.countSince(since),
+            threats24h = container.flows.threatsSince(since),
+            alerts24h = container.alerts.countSince(since),
+            critical24h = container.alerts.unacknowledgedHighSince(since),
+            blocked24h = container.blocks.countSince(since),
+            bytes24h = container.flows.bytesSince(since),
+            totalFlows = container.flows.count(),
+            topDestinations = container.flows.topDestinations(since, 8),
+            categories = container.flows.categoryCounts(since),
+            protocols = container.flows.protocolCounts(since),
+            severities = container.alerts.severityCounts(since)
+        )
     }
 
     fun startProtection() {
@@ -287,19 +313,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         list.domainCount to list.addressCount
     }
 
-    suspend fun rangeSummary(days: Int): Dashboard = withContext(Dispatchers.IO) {
-        val since = System.currentTimeMillis() - days * 86_400_000L
-        Dashboard(
-            flows24h = container.flows.countSince(since),
-            threats24h = container.flows.threatsSince(since),
-            alerts24h = container.alerts.countSince(since),
-            blocked24h = container.blocks.countSince(since),
-            bytes24h = container.flows.bytesSince(since),
-            totalFlows = container.flows.count(),
-            topDestinations = container.flows.topDestinations(since, 8),
-            categories = container.flows.categoryCounts(since)
-        )
-    }
+    suspend fun rangeSummary(days: Int): Dashboard = loadDashboard(days)
 
     fun exportAlerts(onReady: (File) -> Unit) {
         viewModelScope.launch {

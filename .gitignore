@@ -22,3 +22,25 @@ backend/data/ipsum_cache.txt
 .env
 .env.*
 !.env.example
+
+# ---- Android Studio / Gradle ----
+android/.gradle/
+android/app/build/
+android/app/proguard-mapping.txt
+android/app/outputs/
+android/local.properties
+android/**/*.class
+android/**/*.apk
+android/**/*.aab
+
+# ---- Kotlin ----
+**/*.ktmp/
+**/*.tmp
+
+# ---- OS ----
+.DS_Store
+
+# ---- Android secrets ----
+*.jks
+*.keystore
+sentinelai-release.jks

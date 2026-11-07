@@ -2,6 +2,7 @@ package ai.sentinel.mobile.ui.screens
 
 
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -46,7 +48,14 @@ import ai.sentinel.mobile.ui.components.LineChart
 import ai.sentinel.mobile.ui.components.LiveGauge
 import ai.sentinel.mobile.ui.components.Panel
 import ai.sentinel.mobile.ui.components.SectionHeading
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.ui.graphics.Color
+import ai.sentinel.mobile.ui.nav.LocalWideLayout
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import ai.sentinel.mobile.ui.components.SparkLine
@@ -56,6 +65,7 @@ import ai.sentinel.mobile.ui.theme.SentinelBackground
 import ai.sentinel.mobile.ui.theme.SentinelBlue
 import ai.sentinel.mobile.ui.theme.SentinelCard
 import ai.sentinel.mobile.ui.theme.SentinelCyan
+import ai.sentinel.mobile.ui.theme.SentinelGrid
 import ai.sentinel.mobile.ui.theme.SentinelGreen
 import ai.sentinel.mobile.ui.theme.SentinelRed
 import ai.sentinel.mobile.ui.theme.SentinelSurface
@@ -108,20 +118,47 @@ fun ScreenScaffold(
             }
         }
         Spacer(Modifier.height(8.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            StatTile(
-                "Online",
-                if (TunnelState.current().isRunning) "Yes" else "No",
-                tint = if (TunnelState.current().isRunning) SentinelGreen else SentinelAmber,
-                modifier = Modifier.weight(1f)
-            )
-        }
+        StatusStrip()
         content()
         Spacer(Modifier.height(24.dp))
+    }
+}
+
+/**
+ * One consistent status line under every screen title. Reads the service's own state, so the
+ * pill can never claim monitoring that is not happening.
+ */
+@Composable
+private fun StatusStrip() {
+    val snapshot by TunnelState.state.collectAsState()
+    val label = when {
+        snapshot.isCapture -> "CAPTURE · internet paused for ${snapshot.captureRemainingMs / 1000}s"
+        snapshot.isRunning -> "PROTECTION ACTIVE · DNS + firewall"
+        snapshot.status == TunnelState.Status.ERROR -> "TUNNEL ERROR"
+        else -> "MONITORING OFF"
+    }
+    val tint = when {
+        snapshot.isCapture -> SentinelRed
+        snapshot.isRunning -> SentinelGreen
+        snapshot.status == TunnelState.Status.ERROR -> SentinelRed
+        else -> SentinelAmber
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(SentinelCard, RoundedCornerShape(10.dp))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Box(Modifier.size(8.dp).background(tint, CircleShape))
+        Text(label, style = MaterialTheme.typography.labelMedium, color = tint, fontWeight = FontWeight.SemiBold)
+        Spacer(Modifier.weight(1f))
+        Text(
+            "${snapshot.packetsIn} pkts · ${Formatters.bytes(snapshot.bytesIn)}",
+            style = MaterialTheme.typography.labelSmall,
+            color = SentinelTextSecondary
+        )
     }
 }
 
@@ -215,26 +252,26 @@ fun DashboardScreen(vm: AppViewModel, onEnableProtection: () -> Unit) {
     val dnsSeries by vm.dnsSeries.collectAsState()
     val blockSeries by vm.blockSeries.collectAsState()
 
-    val packetFloats = LongListToFloatList(packetSeries)
-    val bytesFloats = LongListToFloatList(bytesSeries)
-    val dnsFloats = LongListToFloatList(dnsSeries)
-    val blockFloats = LongListToFloatList(blockSeries)
+    // Charts want 0..100 heights; the stored series are raw counters.
+    val packetFloats = LongListToPercentSeries(packetSeries)
+    val bytesFloats = LongListToPercentSeries(bytesSeries)
+    val dnsFloats = LongListToPercentSeries(dnsSeries)
+    val blockFloats = LongListToPercentSeries(blockSeries)
     val liveBytes by vm.liveBytes.collectAsState()
 
-    // Determine the visual state for status display
-    val statusColor = when {
-        snapshot.isCapture -> SentinelRed
-        snapshot.isRunning -> SentinelTeal
-        else -> SentinelAmber
+    val statusHex = when {
+        snapshot.isCapture -> "#E5534B"
+        snapshot.isRunning -> "#17B4A0"
+        else -> "#D29922"
     }
-
     val statusLabel = when {
         snapshot.isCapture -> "⬤ CAPTURE"
         snapshot.isRunning -> "⬤ PROTECT"
         else -> "○ STOPPED"
     }
+    val wide = LocalWideLayout.current
 
-    LaunchedEffect(snapshot.flowsPersisted, snapshot.blockedPackets) {
+    LaunchedEffect(snapshot.flowsPersisted, snapshot.blockedPackets, snapshot.dnsQueries) {
         vm.refreshDashboard()
     }
 
@@ -244,32 +281,161 @@ fun DashboardScreen(vm: AppViewModel, onEnableProtection: () -> Unit) {
     ) {
         ProtectionCard(vm, onEnableProtection)
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            StatTile("Flows 24h", dashboard.flows24h.toString(), modifier = Modifier.weight(1f))
-            StatTile(
-                "Threats 24h",
-                dashboard.threats24h.toString(),
-                modifier = Modifier.weight(1f),
-                tint = if (dashboard.threats24h > 0) SentinelRed else MaterialTheme.colorScheme.onSurface
-            )
+        if (wide) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                StatTile("Flows 24h", dashboard.flows24h.toString(), modifier = Modifier.weight(1f))
+                StatTile(
+                    "Threats 24h",
+                    dashboard.threats24h.toString(),
+                    modifier = Modifier.weight(1f),
+                    tint = if (dashboard.threats24h > 0) SentinelRed else SentinelTitleText
+                )
+                StatTile("Alerts 24h", dashboard.alerts24h.toString(), modifier = Modifier.weight(1f))
+                StatTile("Blocked 24h", dashboard.blocked24h.toString(), modifier = Modifier.weight(1f))
+                StatTile("Observed", Formatters.bytes(dashboard.bytes24h), modifier = Modifier.weight(1f))
+            }
+        } else {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                StatTile("Flows 24h", dashboard.flows24h.toString(), modifier = Modifier.weight(1f))
+                StatTile(
+                    "Threats 24h",
+                    dashboard.threats24h.toString(),
+                    modifier = Modifier.weight(1f),
+                    tint = if (dashboard.threats24h > 0) SentinelRed else SentinelTitleText
+                )
+            }
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                StatTile("Alerts 24h", dashboard.alerts24h.toString(), modifier = Modifier.weight(1f))
+                StatTile("Blocked 24h", dashboard.blocked24h.toString(), modifier = Modifier.weight(1f))
+            }
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                StatTile("Observed", Formatters.bytes(dashboard.bytes24h), modifier = Modifier.weight(1f))
+            }
         }
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            modifier = Modifier.fillMaxWidth()
+
+        Panel(
+            title = "Security health",
+            subtitle = "Derived from the last 24 h of stored rows, with the deduction shown."
         ) {
-            StatTile("Blocked 24h", dashboard.blocked24h.toString(), modifier = Modifier.weight(1f))
-            StatTile("Observed", Formatters.bytes(dashboard.bytes24h), modifier = Modifier.weight(1f))
+            val score = dashboard.healthScore
+            val scoreColor = when {
+                score >= 85 -> SentinelGreen
+                score >= 60 -> SentinelAmber
+                else -> SentinelRed
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "$score",
+                        style = MaterialTheme.typography.displaySmall,
+                        fontWeight = FontWeight.Bold,
+                        color = scoreColor
+                    )
+                    Text(
+                        " / 100",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = SentinelTextSecondary
+                    )
+                    Spacer(Modifier.weight(1f))
+                    Text(
+                        when {
+                            snapshot.isCapture -> "Capture session"
+                            snapshot.isRunning -> "Monitoring"
+                            else -> "Not monitoring"
+                        },
+                        style = MaterialTheme.typography.labelMedium,
+                        color = SentinelTextSecondary
+                    )
+                }
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .background(SentinelGrid, RoundedCornerShape(4.dp))
+                ) {
+                    Box(
+                        Modifier
+                            .fillMaxWidth((score / 100f).coerceIn(0.02f, 1f))
+                            .fillMaxHeight()
+                            .background(scoreColor, RoundedCornerShape(4.dp))
+                    )
+                }
+                Text(
+                    "100 − up to 45 for the share of flows classified as a threat − 5 per unresolved " +
+                        "high alert (max 25) − 10 while nothing is monitored. Not a vendor risk score.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = SentinelTextSecondary
+                )
+            }
         }
+
+        TwoUp(
+            wide = wide,
+            left = {
+                Panel(title = "Protocol distribution", subtitle = "Last 24 h, by flow count.") {
+                    if (dashboard.protocols.isEmpty()) {
+                        EmptyState("No flows yet", "Protocols appear once traffic is recorded.")
+                    } else {
+                        val total = dashboard.protocols.sumOf { it.hits }.coerceAtLeast(1)
+                        val palette = listOf(SentinelCyan, SentinelTeal, SentinelBlue, SentinelAmber)
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            dashboard.protocols.forEachIndexed { index, row ->
+                                DistributionBar(
+                                    label = row.protocol,
+                                    value = row.hits,
+                                    total = total,
+                                    detail = Formatters.bytes(row.bytes),
+                                    color = palette[index % palette.size]
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            right = {
+                Panel(title = "Threat severity", subtitle = "Alerts raised in the last 24 h.") {
+                    if (dashboard.severities.isEmpty()) {
+                        EmptyState("No alerts in range", "Severity appears when a rule or the model fires.")
+                    } else {
+                        val total = dashboard.severities.sumOf { it.hits }.coerceAtLeast(1)
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            dashboard.severities.forEach { row ->
+                                DistributionBar(
+                                    label = row.severity.replaceFirstChar { it.uppercase() },
+                                    value = row.hits,
+                                    total = total,
+                                    detail = "${row.hits}",
+                                    color = when (row.severity) {
+                                        "critical", "high" -> SentinelRed
+                                        "medium" -> SentinelAmber
+                                        else -> SentinelTeal
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        )
 
         Panel(
             title = "Tunnel counters",
             subtitle = "Live values from the service, not estimates."
         ) {
-            Column {
-                LiveGauge("Status", statusLabel, color = statusColor.toString())
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                LiveGauge("Status", statusLabel, color = statusHex)
                 LiveGauge("Packets", snapshot.packetsIn.toString(), color = "#3FB950")
                 LiveGauge("Bytes", Formatters.bytes(snapshot.bytesIn), color = "#22D3EE")
                 LiveGauge("DNS queries", snapshot.dnsQueries.toString(), color = "#17B4A0")
@@ -281,7 +447,10 @@ fun DashboardScreen(vm: AppViewModel, onEnableProtection: () -> Unit) {
         }
 
         // ---- Live activity feed ----
-        Panel(title = "What is happening right now", subtitle = "Counters update as packet activity occurs.") {
+        Panel(
+            title = "What is happening right now",
+            subtitle = "Counters sampled every 5 s while the tunnel runs."
+        ) {
             Column(Modifier.height(120.dp)) {
                 SparkLine(values = packetFloats, color = SentinelLine)
                 SparkLine(values = bytesFloats, color = SentinelWave)
@@ -292,7 +461,8 @@ fun DashboardScreen(vm: AppViewModel, onEnableProtection: () -> Unit) {
 
         Panel(
             title = "Bytes flowing by (live)",
-            subtitle = "A waveline — bar height tracks incoming bytes. The app runs with " + Formatters.bytes(liveBytes) + " bytes in the last sample."
+            subtitle = "Bar height is relative to the busiest sample in the window. " +
+                Formatters.bytes(liveBytes) + " bytes observed so far this session."
         ) {
             WaveLine(values = bytesFloats, activeColor = SentinelWave, idleColor = SentinelTextSecondary, barCount = 24)
         }
@@ -363,6 +533,67 @@ fun DashboardScreen(vm: AppViewModel, onEnableProtection: () -> Unit) {
 }
 
 @Composable
+private fun TwoUp(
+    wide: Boolean,
+    left: @Composable () -> Unit,
+    right: @Composable () -> Unit
+) {
+    if (wide) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(Modifier.weight(1f)) { left() }
+            Box(Modifier.weight(1f)) { right() }
+        }
+    } else {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            left()
+            right()
+        }
+    }
+}
+
+/** A labelled horizontal bar. Width is the value's share of [total]; no invented baseline. */
+@Composable
+private fun DistributionBar(
+    label: String,
+    value: Long,
+    total: Long,
+    detail: String,
+    color: Color
+) {
+    val fraction = (value.toFloat() / total.toFloat()).coerceIn(0f, 1f)
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            label,
+            style = MaterialTheme.typography.bodySmall,
+            color = SentinelText,
+            modifier = Modifier.width(64.dp)
+        )
+        Box(
+            Modifier
+                .weight(1f)
+                .height(8.dp)
+                .background(SentinelGrid, RoundedCornerShape(4.dp))
+        ) {
+            Box(
+                Modifier
+                    .fillMaxWidth(fraction.coerceAtLeast(0.02f))
+                    .fillMaxHeight()
+                    .background(color, RoundedCornerShape(4.dp))
+            )
+        }
+        Text(
+            detail,
+            style = MaterialTheme.typography.labelSmall,
+            color = SentinelTextSecondary,
+            modifier = Modifier.width(70.dp)
+        )
+    }
+}
+
+@Composable
 private fun FlowRowCompact(flow: FlowEntity) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(modifier = Modifier.weight(1f)) {
@@ -396,23 +627,23 @@ fun LiveMonitorScreen(vm: AppViewModel, onEnableProtection: () -> Unit) {
     val dnsSeries by vm.dnsSeries.collectAsState()
     val blockSeries by vm.blockSeries.collectAsState()
 
-    val packetFloats = LongListToFloatList(packetSeries)
-    val bytesFloats = LongListToFloatList(bytesSeries)
-    val dnsFloats = LongListToFloatList(dnsSeries)
-    val blockFloats = LongListToFloatList(blockSeries)
+    // Charts want 0..100 heights; the stored series are raw counters.
+    val packetFloats = LongListToPercentSeries(packetSeries)
+    val bytesFloats = LongListToPercentSeries(bytesSeries)
+    val dnsFloats = LongListToPercentSeries(dnsSeries)
+    val blockFloats = LongListToPercentSeries(blockSeries)
 
-    // Determine the visual state for status display
-    val statusColor = when {
-        snapshot.isCapture -> SentinelRed
-        snapshot.isRunning -> SentinelTeal
-        else -> SentinelAmber
+    val statusHex = when {
+        snapshot.isCapture -> "#E5534B"
+        snapshot.isRunning -> "#17B4A0"
+        else -> "#D29922"
     }
-
     val statusLabel = when {
         snapshot.isCapture -> "⬤ CAPTURE"
         snapshot.isRunning -> "⬤ PROTECT"
         else -> "○ STOPPED"
     }
+    val wide = LocalWideLayout.current
 
     ScreenScaffold(
         title = "Live Monitor",
@@ -426,7 +657,7 @@ fun LiveMonitorScreen(vm: AppViewModel, onEnableProtection: () -> Unit) {
             else -> "Idle — no tunnel active"
         }) {
             Column {
-                LiveGauge("State", statusLabel, color = statusColor.toString())
+                LiveGauge("State", statusLabel, color = statusHex)
                 LiveGauge("Packets observed", snapshot.packetsIn.toString(), color = "#3FB950")
                 LiveGauge("Bytes observed", Formatters.bytes(snapshot.bytesIn), color = "#22D3EE")
                 LiveGauge("DNS queries", snapshot.dnsQueries.toString(), color = "#17B4A0")
@@ -516,7 +747,12 @@ fun TrafficScreen(vm: AppViewModel) {
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         item {
-            Text("Traffic", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = androidx.compose.ui.graphics.Color(0xFF0B1220))
+            Text(
+                "Traffic",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = SentinelTitleText
+            )
         }
         item {
             Text(

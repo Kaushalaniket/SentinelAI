@@ -10,7 +10,9 @@ import ai.sentinel.mobile.data.db.DailyStatEntity
 import ai.sentinel.mobile.data.db.DestinationCount
 import ai.sentinel.mobile.data.db.FlowDao
 import ai.sentinel.mobile.data.db.FlowEntity
+import ai.sentinel.mobile.data.db.ProtocolCount
 import ai.sentinel.mobile.data.db.RuleDao
+import ai.sentinel.mobile.data.db.SeverityCount
 import ai.sentinel.mobile.data.db.RuleEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -28,6 +30,7 @@ class FlowRepository(private val dao: FlowDao) {
     suspend fun topDestinations(since: Long, limit: Int = 8): List<DestinationCount> =
         dao.topDestinations(since, limit)
     suspend fun categoryCounts(since: Long): List<CategoryCount> = dao.categoryCounts(since)
+    suspend fun protocolCounts(since: Long): List<ProtocolCount> = dao.protocolCounts(since)
     suspend fun recentSince(since: Long, limit: Int = 200) = dao.recentSince(since, limit)
     suspend fun deleteAll() = dao.deleteAll()
     suspend fun trim(days: Int, rows: Int): Pair<Int, Int> {
@@ -46,6 +49,8 @@ class AlertRepository(private val dao: AlertDao) {
     suspend fun recent(limit: Int = 200) = dao.recent(limit)
     suspend fun countSince(since: Long) = dao.countSince(since)
     suspend fun highSeveritySince(since: Long) = dao.highSeveritySince(since)
+    suspend fun unacknowledgedHighSince(since: Long) = dao.unacknowledgedHighSince(since)
+    suspend fun severityCounts(since: Long): List<SeverityCount> = dao.severityCounts(since)
     suspend fun acknowledge(id: Long) = dao.acknowledge(id)
     suspend fun acknowledgeAll() = dao.acknowledgeAll()
     suspend fun deleteAll() = dao.deleteAll()

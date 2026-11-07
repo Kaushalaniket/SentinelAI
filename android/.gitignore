@@ -4,7 +4,6 @@ android/app/proguard-mapping.txt
 android/app/outputs/
 
 # Gradle wrapper jar (must be installed locally)
-android/gradle/wrapper/gradle-wrapper.jar
 
 # Machine-specific SDK path
 local.properties
